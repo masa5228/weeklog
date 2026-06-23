@@ -1,0 +1,13 @@
+project_id = "weeklog"
+
+# LINE WORKS からの Webhook。署名で検証するため Supabase JWT は不要。
+[functions.lineworks-webhook]
+verify_jwt = false
+
+# 編集画面（/edit/:token）から呼ばれる。ワンタイムトークンで認可するため Supabase JWT は不要。
+[functions.report-edit]
+verify_jwt = false
+
+# GitHub Actions から service_role キー付きで呼ばれる。JWT 検証あり。
+[functions.send-daily-prompt]
+verify_jwt = true
