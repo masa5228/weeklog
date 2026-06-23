@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  web:
+    name: Web & Mastra
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Type-check (frontend + api)
+        run: npm run typecheck
+      - name: Type-check (mastra)
+        run: npm run typecheck:mastra
+      - name: Build frontend
+        run: npm run build
+
+  functions:
+    name: Edge Functions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check edge functions
+        run: |
+          deno check supabase/functions/lineworks-webhook/index.ts \
+            supabase/functions/send-daily-prompt/index.ts \
+            supabase/functions/report-edit/index.ts
+      - name: Lint edge functions
+        run: deno lint supabase/functions

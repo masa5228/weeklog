@@ -1,0 +1,16 @@
+name: Weekly Generate
+
+on:
+  schedule:
+    - cron: "0 12 * * 5" # UTC 12:00 = JST 21:00 金曜
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call generate-reports
+        run: |
+          curl -fsS -X POST "${{ secrets.VERCEL_URL }}/api/generate-reports" \
+            -H "Authorization: Bearer ${{ secrets.INTERNAL_SECRET }}" \
+            -H "Content-Type: application/json"
