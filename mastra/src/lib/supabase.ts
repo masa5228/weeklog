@@ -84,30 +84,46 @@ export async function fetchWeekLogs(weekStart: string): Promise<MemberLogs[]> {
   return [...byMember.values()];
 }
 
+export interface UpsertResult {
+  token: string;
+  alreadySubmitted: boolean;
+}
+
 export async function upsertReport(
   memberId: string,
   weekStart: string,
   draft: ReportDraft,
-): Promise<string> {
-  const token = crypto.randomUUID();
-  const { data, error } = await serviceClient()
+): Promise<UpsertResult> {
+  const supabase = serviceClient();
+
+  const { data: existing } = await supabase
     .from("weekly_reports")
-    .upsert(
-      {
-        member_id: memberId,
-        week_start: weekStart,
-        token,
-        tasks_draft: draft.tasks,
-        issues_draft: draft.issues,
-        solutions_draft: draft.solutions,
-        ai_coaching: draft.coaching,
-        status: "draft",
-      },
-      { onConflict: "member_id,week_start" },
-    )
-    .select("token")
-    .single();
+    .select("token, status")
+    .eq("member_id", memberId)
+    .eq("week_start", weekStart)
+    .maybeSingle();
+
+  // 提出済みは下書きを上書きしない（提出内容・編集URLを保護する）。
+  if (existing?.status === "submitted") {
+    return { token: existing.token as string, alreadySubmitted: true };
+  }
+
+  // 既存の下書きがあればトークンを維持し、編集URLを生かしたままにする。
+  const token = (existing?.token as string | undefined) ?? crypto.randomUUID();
+  const { error } = await supabase.from("weekly_reports").upsert(
+    {
+      member_id: memberId,
+      week_start: weekStart,
+      token,
+      tasks_draft: draft.tasks,
+      issues_draft: draft.issues,
+      solutions_draft: draft.solutions,
+      ai_coaching: draft.coaching,
+      status: "draft",
+    },
+    { onConflict: "member_id,week_start" },
+  );
 
   if (error) throw new Error(`weekly_reports の保存に失敗: ${error.message}`);
-  return (data as { token: string }).token;
+  return { token, alreadySubmitted: false };
 }

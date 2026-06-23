@@ -57,10 +57,12 @@ alter table daily_logs enable row level security;
 alter table bot_sessions enable row level security;
 alter table weekly_reports enable row level security;
 
--- マネージャー閲覧用ビュー。
--- ai_coaching と token を除外し、base テーブルの RLS をバイパスして
--- 認証済みマネージャーにのみ閲覧を許可する（security definer = ビュー所有者権限で実行）。
-create view manager_reports as
+-- マネージャー閲覧用ビュー。ai_coaching と token を除外する。
+-- security_invoker=false（PostgreSQL のビュー既定）によりビュー所有者(postgres)権限で
+-- 実行され、base テーブルの RLS をバイパスする。既定値だが意図を固定するため明示する。
+-- 閲覧は authenticated（= マネージャー）のみに grant し、anon からは revoke する。
+create view manager_reports
+with (security_invoker = false) as
 select
   wr.id,
   wr.member_id,

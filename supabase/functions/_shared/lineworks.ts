@@ -59,7 +59,10 @@ async function buildAssertion(): Promise<string> {
   return `${signingInput}.${base64url(new Uint8Array(signature))}`;
 }
 
-async function getAccessToken(): Promise<string> {
+let cachedToken: { value: string; expiresAt: number } | null = null;
+let inflight: Promise<string> | null = null;
+
+async function fetchToken(): Promise<string> {
   const body = new URLSearchParams({
     assertion: await buildAssertion(),
     grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
@@ -75,8 +78,25 @@ async function getAccessToken(): Promise<string> {
   if (!res.ok) {
     throw new Error(`LINE WORKS 認証に失敗 (${res.status}): ${await res.text()}`);
   }
-  const json = (await res.json()) as { access_token: string };
+  const json = (await res.json()) as {
+    access_token: string;
+    expires_in?: number;
+  };
+  const ttlMs = (json.expires_in ?? 3600) * 1000;
+  cachedToken = { value: json.access_token, expiresAt: Date.now() + ttlMs };
   return json.access_token;
+}
+
+function getAccessToken(): Promise<string> {
+  if (cachedToken && cachedToken.expiresAt > Date.now() + 60_000) {
+    return Promise.resolve(cachedToken.value);
+  }
+  if (!inflight) {
+    inflight = fetchToken().finally(() => {
+      inflight = null;
+    });
+  }
+  return inflight;
 }
 
 export async function sendTextMessage(userId: string, text: string): Promise<void> {

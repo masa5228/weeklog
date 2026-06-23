@@ -19,24 +19,27 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   if (error) return json({ error: error.message }, 500);
 
-  const failures: string[] = [];
-  let sent = 0;
+  const results = await Promise.all(
+    (members ?? []).map(async (member) => {
+      await supabase
+        .from("bot_sessions")
+        .upsert(
+          { member_id: member.id, step: 1, tasks_temp: null, issues_temp: null },
+          { onConflict: "member_id" },
+        );
+      try {
+        await sendTextMessage(member.line_works_user_id, PROMPT);
+        return { ok: true, failure: null as string | null };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return { ok: false, failure: `${member.line_works_user_id}: ${message}` };
+      }
+    }),
+  );
 
-  for (const member of members ?? []) {
-    await supabase
-      .from("bot_sessions")
-      .upsert(
-        { member_id: member.id, step: 1, tasks_temp: null, issues_temp: null },
-        { onConflict: "member_id" },
-      );
-    try {
-      await sendTextMessage(member.line_works_user_id, PROMPT);
-      sent++;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      failures.push(`${member.line_works_user_id}: ${message}`);
-    }
-  }
-
-  return json({ members: members?.length ?? 0, sent, failures });
+  return json({
+    members: members?.length ?? 0,
+    sent: results.filter((r) => r.ok).length,
+    failures: results.flatMap((r) => (r.failure ? [r.failure] : [])),
+  });
 });

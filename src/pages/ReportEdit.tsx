@@ -96,8 +96,7 @@ export function ReportEdit() {
         <header style={{ marginBottom: 16 }}>
           <h1 style={{ fontSize: 22, margin: "0 0 4px" }}>週報の編集・提出</h1>
           <p style={{ color: colors.muted, fontSize: 14, margin: 0 }}>
-            {report.display_name}・
-            {formatWeekRange(new Date(`${report.week_start}T00:00:00`))}
+            {report.display_name}・{formatWeekRange(report.week_start)}
           </p>
         </header>
 

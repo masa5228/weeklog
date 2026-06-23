@@ -8,7 +8,6 @@ import {
   formatDateTime,
   formatWeekRange,
   isCurrentWeekOrLater,
-  toDateString,
 } from "../lib/week";
 import {
   card,
@@ -30,13 +29,13 @@ export function Dashboard() {
     [weekStart],
   );
 
-  const load = useCallback(async (monday: Date) => {
+  const load = useCallback(async (monday: string) => {
     setLoading(true);
     setError(null);
     const { data, error } = await supabase
       .from("manager_reports")
       .select("id, member_id, week_start, status, submitted_at, display_name")
-      .eq("week_start", toDateString(monday))
+      .eq("week_start", monday)
       .order("display_name", { ascending: true });
     if (error) {
       setError(error.message);

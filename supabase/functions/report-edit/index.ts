@@ -71,7 +71,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const asText = (key: string): string =>
       typeof body[key] === "string" ? (body[key] as string) : "";
 
-    const { error: updateError } = await supabase
+    // status='draft' 条件付き更新で二重提出を原子的に防ぐ（更新0件 = 既に提出済み）。
+    const { data: updated, error: updateError } = await supabase
       .from("weekly_reports")
       .update({
         tasks_final: asText("tasks_final"),
@@ -81,9 +82,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
         status: "submitted",
         submitted_at: new Date().toISOString(),
       })
-      .eq("token", token);
+      .eq("token", token)
+      .eq("status", "draft")
+      .select("id");
 
     if (updateError) return error(updateError.message, 500);
+    if (!updated || updated.length === 0) {
+      return error("すでに提出済みです", 409);
+    }
     return json({ ok: true });
   }
 

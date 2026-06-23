@@ -52,7 +52,7 @@ export function ReportDetail() {
                 {report.display_name}
               </h1>
               <p style={{ color: colors.muted, fontSize: 14, margin: 0 }}>
-                {formatWeekRange(new Date(`${report.week_start}T00:00:00`))}
+                {formatWeekRange(report.week_start)}
                 {report.status === "submitted" ? "・提出済" : "・未提出"}
               </p>
             </div>

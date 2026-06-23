@@ -1,51 +1,57 @@
+// 週の計算はすべて JST 基準。weekStart は JST の月曜日を 'YYYY-MM-DD' で表す。
+// DB の weekly_reports.week_start（mastra が JST で算出）と一致させるため、
+// ブラウザのローカルタイムゾーンに依存しない実装にする。
+
+const DAY_MS = 86_400_000;
+const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
 const WEEKDAY_JP = ["日", "月", "火", "水", "木", "金", "土"];
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
 
-export function toDateString(d: Date): string {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+function isoUtc(d: Date): string {
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(
+    d.getUTCDate(),
+  )}`;
 }
 
-export function mondayOf(d: Date): Date {
-  const result = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const day = result.getDay();
+function parseWeekStart(weekStart: string): Date {
+  return new Date(`${weekStart}T00:00:00Z`);
+}
+
+export function currentWeekStart(): string {
+  const jst = new Date(Date.now() + JST_OFFSET_MS);
+  const day = jst.getUTCDay();
   const diff = day === 0 ? -6 : 1 - day;
-  result.setDate(result.getDate() + diff);
-  return result;
+  const monday = new Date(jst.getTime() + diff * DAY_MS);
+  return isoUtc(monday);
 }
 
-export function currentWeekStart(): Date {
-  return mondayOf(new Date());
+export function addWeeks(weekStart: string, weeks: number): string {
+  return isoUtc(new Date(parseWeekStart(weekStart).getTime() + weeks * 7 * DAY_MS));
 }
 
-export function addWeeks(monday: Date, weeks: number): Date {
-  const result = new Date(monday);
-  result.setDate(result.getDate() + weeks * 7);
-  return result;
+export function isCurrentWeekOrLater(weekStart: string): boolean {
+  return weekStart >= currentWeekStart();
 }
 
-export function isCurrentWeekOrLater(monday: Date): boolean {
-  return monday.getTime() >= currentWeekStart().getTime();
-}
-
-export function formatWeekRange(monday: Date): string {
-  const sunday = addWeeks(monday, 1);
-  sunday.setDate(sunday.getDate() - 1);
-  const start = `${monday.getFullYear()}/${pad(monday.getMonth() + 1)}/${pad(
-    monday.getDate(),
-  )} (${WEEKDAY_JP[monday.getDay()]})`;
-  const end = `${pad(sunday.getMonth() + 1)}/${pad(sunday.getDate())} (${
-    WEEKDAY_JP[sunday.getDay()]
+export function formatWeekRange(weekStart: string): string {
+  const monday = parseWeekStart(weekStart);
+  const sunday = new Date(monday.getTime() + 6 * DAY_MS);
+  const start = `${monday.getUTCFullYear()}/${pad(monday.getUTCMonth() + 1)}/${pad(
+    monday.getUTCDate(),
+  )} (${WEEKDAY_JP[monday.getUTCDay()]})`;
+  const end = `${pad(sunday.getUTCMonth() + 1)}/${pad(sunday.getUTCDate())} (${
+    WEEKDAY_JP[sunday.getUTCDay()]
   })`;
   return `${start} 〜 ${end}`;
 }
 
 export function formatDateTime(iso: string | null): string {
   if (!iso) return "-";
-  const d = new Date(iso);
-  return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(
-    d.getHours(),
-  )}:${pad(d.getMinutes())}`;
+  const jst = new Date(new Date(iso).getTime() + JST_OFFSET_MS);
+  return `${jst.getUTCFullYear()}/${pad(jst.getUTCMonth() + 1)}/${pad(
+    jst.getUTCDate(),
+  )} ${pad(jst.getUTCHours())}:${pad(jst.getUTCMinutes())}`;
 }

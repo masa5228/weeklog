@@ -41,7 +41,12 @@ async function processMember(
   let token: string;
   try {
     const draft = await generateDraft(member);
-    token = await upsertReport(member.memberId, weekStart, draft);
+    const result = await upsertReport(member.memberId, weekStart, draft);
+    // 提出済みは再生成・再通知しない。
+    if (result.alreadySubmitted) {
+      return { generated: false, notified: false, failures };
+    }
+    token = result.token;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return {

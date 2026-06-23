@@ -25,40 +25,24 @@ export interface WeeklyReport {
   created_at: string;
 }
 
-export interface DashboardRow {
-  id: string;
-  member_id: string;
-  week_start: string;
-  status: ReportStatus;
-  submitted_at: string | null;
-  display_name: string;
-}
+export type DashboardRow = Pick<
+  WeeklyReport,
+  "id" | "member_id" | "week_start" | "status" | "submitted_at"
+> & { display_name: string };
 
-export interface ReportDetail {
-  id: string;
-  week_start: string;
-  display_name: string;
-  tasks_final: string | null;
-  issues_final: string | null;
-  solutions_final: string | null;
-  comments: string | null;
-  status: ReportStatus;
-  submitted_at: string | null;
-}
+export type ReportDetail = Pick<
+  WeeklyReport,
+  | "id"
+  | "week_start"
+  | "tasks_final"
+  | "issues_final"
+  | "solutions_final"
+  | "comments"
+  | "status"
+  | "submitted_at"
+> & { display_name: string };
 
-export interface EditableReport {
-  id: string;
-  token: string;
-  week_start: string;
+// report-edit Edge Function のレスポンス（member_id / created_at を除く全列 + display_name）。
+export type EditableReport = Omit<WeeklyReport, "member_id" | "created_at"> & {
   display_name: string;
-  tasks_draft: string | null;
-  issues_draft: string | null;
-  solutions_draft: string | null;
-  ai_coaching: string | null;
-  tasks_final: string | null;
-  issues_final: string | null;
-  solutions_final: string | null;
-  comments: string | null;
-  status: ReportStatus;
-  submitted_at: string | null;
-}
+};
