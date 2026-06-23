@@ -110,6 +110,7 @@ token           text unique not null        -- ワンタイムURL用（gen_rando
 tasks_draft     text                        -- AI生成
 issues_draft    text
 solutions_draft text
+ai_coaching     text                        -- AIコーチング（メンバーのみ表示・マネージャーには非公開）
 tasks_final     text                        -- メンバー編集後
 issues_final    text
 solutions_final text
@@ -139,9 +140,17 @@ unique(member_id, week_start)
 
 ### 画面4：週報編集・提出（/edit/:token）※認証不要
 - ワンタイムトークンでweekly_reportsを特定
+- **AIからのヒント**（ai_coaching）を読み取り専用パネルで表示（マネージャーには非公開・この画面にのみ表示）
+  - トーン：問いかけ形式。「〜ではないでしょうか」ではなく「〜という視点も持つと来週に活かせるかもしれません」
+  - 課題の粒度・解決策の具体性・根本原因への言及が薄い場合にヒントを出す
 - 4フィールド編集可能テキストエリア（やったこと・課題・課題解決・所管）
 - 提出ボタン → status: submitted に更新
 - 提出済みの場合は「提出済みです」と表示（再提出不可）
+
+### 重要：ai_coachingの非公開ルール
+- Dashboard・ReportDetailはai_coachingフィールドをAPIレスポンスに含めない
+- Supabaseのクエリで明示的にai_coachingを除外するか、マネージャー用のviewを作る
+- ReportEdit（/edit/:token）のみai_coachingを取得・表示する
 
 ---
 
@@ -154,8 +163,14 @@ Step 1: Supabaseから今週（月〜金）の全メンバーのdaily_logsを取
 
 Step 2（メンバーごとに並列）:
   2a. Claude APIで週報下書きを生成（structured output）
-      スキーマ: { tasks: string, issues: string, solutions: string }
-      プロンプト: 日次ログ一覧 + 週報4フィールド生成指示
+      スキーマ: { tasks: string, issues: string, solutions: string, coaching: string }
+      プロンプト: 日次ログ一覧 + 週報4フィールド生成指示 + コーチング指示
+      コーチング指示の方針:
+        - 課題の粒度が大きすぎる・小さすぎる場合にヒントを出す
+        - 解決策が対症療法にとどまる場合に根本原因への視点を促す
+        - 問いかけ形式で書く（断定・評価はしない）
+        - 該当がない場合は「今週は課題と解決策のバランスが取れています」等の肯定的なコメントにする
+        - 100〜150文字程度
 
   2b. バリデーション
       - 全フィールドが文字列であること
