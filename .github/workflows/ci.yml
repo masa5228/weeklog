@@ -33,7 +33,8 @@ jobs:
           deno-version: v2.x
       - name: Type-check edge functions
         run: |
-          deno check supabase/functions/lineworks-webhook/index.ts \
+          deno check --node-modules-dir=none \
+            supabase/functions/lineworks-webhook/index.ts \
             supabase/functions/send-daily-prompt/index.ts \
             supabase/functions/report-edit/index.ts
       - name: Lint edge functions
