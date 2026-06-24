@@ -1,0 +1,45 @@
+{
+  "version": "5",
+  "specifiers": {
+    "jsr:@supabase/supabase-js@2": "2.108.2"
+  },
+  "jsr": {
+    "@supabase/supabase-js@2.108.2": {
+      "integrity": "db603b534b1939a216ef004fe9fdd0c72bb4ba097fb04be23ea76cb8c70272aa"
+    }
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:@ai-sdk/google@^3.0.83",
+        "npm:@supabase/supabase-js@^2.108.2",
+        "npm:@types/node@26",
+        "npm:@types/react-dom@^19.2.3",
+        "npm:@types/react@^19.2.17",
+        "npm:@vercel/node@^5.8.18",
+        "npm:@vitejs/plugin-react@^6.0.3",
+        "npm:ai@^6.0.208",
+        "npm:react-dom@^19.2.7",
+        "npm:react-router-dom@^7.18.0",
+        "npm:react@^19.2.7",
+        "npm:typescript@^5.9.3",
+        "npm:vite@^8.1.0",
+        "npm:zod@^4.4.3"
+      ]
+    },
+    "members": {
+      "mastra": {
+        "packageJson": {
+          "dependencies": [
+            "npm:@ai-sdk/google@^3.0.83",
+            "npm:@mastra/core@^1.45.0",
+            "npm:@supabase/supabase-js@^2.108.2",
+            "npm:ai@^6.0.208",
+            "npm:typescript@^5.9.3",
+            "npm:zod@^4.4.3"
+          ]
+        }
+      }
+    }
+  }
+}
